@@ -1,0 +1,8 @@
+# Files to be ignored by Git
+
+# All object files
+*.o
+
+# Everything in the Debug folder
+Debug/
+
