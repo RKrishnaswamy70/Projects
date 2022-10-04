@@ -11,7 +11,7 @@ class ChatClient {
 public:
 
 	// Constructor
-	ChatClient (const string& name);
+	ChatClient (const string& serverIpAddrStr, const string& name);
 
 	// Destructor
 	virtual

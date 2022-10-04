@@ -1,0 +1,23 @@
+<script>
+function play(x) {
+    document.RPiController.display.value = x;
+}
+
+</script>
+
+<form name="RPiController">
+	Raspberry Pi Controller
+	<p>
+	<textarea id="display" 
+                  rows=2 cols=20 
+                  class="screen"></textarea>
+	<p>
+ 	<button type="button" onclick="play('A');">A</button>
+ 	<button type="button" onclick="play('B');">B</button>
+ 	<button type="button" onclick="play('C');">C</button>
+ 	<button type="button" onclick="play('D');">D</button>
+ 	<button type="button" onclick="play('');">Clear</button>
+	<p>
+</form>
+
+

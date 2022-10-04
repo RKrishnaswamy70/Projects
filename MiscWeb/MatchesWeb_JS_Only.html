@@ -1,0 +1,75 @@
+<script>
+function play() {
+    matchesVal = parseInt(document.matchesGame.matches.value);
+    taken = parseInt(document.getElementById("taken").value);
+
+    if (matchesVal < taken) {
+        display = `Sorry, cannot take ${taken} from ${matchesVal}.\n`;
+    } else if (matchesVal == taken) {
+        display = "Congratulations! You win!!\n";
+    } else {
+        matchesVal -= taken;
+        newTaken = matchesVal % 5;
+        if (newTaken == 0)
+            newTaken = 1;
+        matchesVal -= newTaken;
+        display = `You took ${taken}.  I take ${newTaken} leaving ${matchesVal}.\n`;
+        if (matchesVal == 0)
+            display += "I win!\n";
+    }
+
+    // The tag 'matches' is an input-tag.  Its text value is
+    // programmatically set by changing the 'value' attribute.
+    document.matchesGame.matches.value = matchesVal.toString();
+    
+    var displayElt = document.matchesGame.display;
+
+    // Append the text to the display
+    displayElt.value += display;
+
+    // Scroll to the end of the display
+    displayElt.scrollTop = displayElt.scrollHeight;
+}
+
+
+function clearDisplay() {
+    // alert("--->1");
+    document.matchesGame.display.value = "";
+}
+
+</script>
+
+<style>
+      body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+</style>
+
+<html>
+  <body bgcolor="#cccccc" text="#000000">
+    <p>
+    <form name="matchesGame">
+	Matches :
+	<input type="text" id="matches" value="25">
+	<p>
+	Player  :
+	<select id="taken">
+	   <option value="1">1 Match
+	   <option value="2">2 Matches
+	   <option value="3">3 Matches
+	   <option value="4">4 Matches
+	</select>
+	<p>
+ 	<button id="playButton" type="button" onclick="play()">Play
+        <button id="clearButton" type="button" onclick="clearDisplay();">Clear</button>
+	<p>
+	<textarea id="display" 
+                  defaultValue="" 
+                  rows=4 cols=50 
+                  style="overflow=scroll;"></textarea>
+    </form>
+  </body>
+</html>
+
+
+

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatchesWeb ReadMe</title>
+</head>
+<body>
+   <style>
+      .padded-list li {
+         padding-bottom: 5px; /* Creates space after the content of each item */
+       }
+
+       /* This style block could also be an external CSS file */
+      .code {
+         font-family: courier;         /* Sets the font type */
+         margin-left: 30px;            /* Sets the left margin */
+         font-size: 16px;              /* Sets the font size */
+         color: #333333;               /* Sets the font color */
+         background-color: #f0f0f0;    /* Sets the background color */
+         padding: 15px;                /* Adds space inside the border */
+         border: 1px solid #cccccc;    /* Optional: adds a border */
+        }
+   </style>
+
+    <h1>The MatchesWeb Project</h1>
+    <h2>Introduction</h2>
+    <p>
+The MatchesWeb project is an illustration of various ways in which to implement the Matches Game.  This is a quick introduction as to how to service a web page
+    </p>
+
+    <h2>The Matches Game</h2>
+    <p>
+The Matches Game is a game which starts off with 25 matches.  Two Players
+play alternately, and may pick up 1,2,3 or 4 matches on their turn.  The
+player who cleans up the matches, leaving no more for his opponent, wins.
+    </p>
+    <p>
+The strategy to win the game is based on the observation that the player
+who gets 5 matches cannot win.  No matter what he takes, the other player
+can take the rest and win.  Then clearly, the player who gets 10 matches
+cannot win, for then his opponent can reduce him to 5 matches, and then
+win.  Following this logic, the player who gets a multiple of 5 matches,
+say 10, 15, 20 or 25 cannot win, for then his opponent can force him to
+be left to play with the next lower multiple of 5.  Repeated application
+of this strategy by one player reduces the other player to always face
+a whole multiple of 5 matches, leading finally to 0 matches and lose.
+    </p>
+    <p>
+When the user plays against the computer as the opponent, the strategy
+is therefore to present the user with a multiple of 5.  The computer must
+pick up the remaining-matches%5 (% is the remainder-modulo-5 operator),
+to reduce the remaining-matches to the next lower multiple of 5.
+    </p>
+    <p>
+
+    <h2>The Technologies used to implement The Matches Game</h2>
+    <p>
+We implement the game using the following technologies:
+    </p>
+    <ul class="padded-list">
+        <li>JavaScript only.  This is in the file:
+             <ul>
+                 <li> MatchesWeb_JS_Only.html</li>
+             </ul>
+        </li>
+        <li>JavaScript with Apache server with PHP.  This is in the files:
+             <ul>
+                 <li> MatchesWeb_JS_WebServer.html</li>
+                 <li> MatchesWeb.php</li>
+             </ul>
+        </li>
+        <li>JavaScript with Python Flask Webserver.  This is in the files:
+             <ul>
+                 <li> MatchesWeb_JS_WebServer.html</li>
+                 <li> MatchesFlask.py</li>
+             </ul>
+        </li>
+        <li>JavaScript with Python HttpServer Webserver.  This is in the files:
+             <ul>
+                 <li> MatchesWeb_JS_WebServer.html</li>
+                 <li> MatchesServer.py</li>
+                 <li> WebServerSupport.py</li>
+             </ul>
+        </li>
+        <li>JavaScript with Raw Python.  This is in the files:
+             <ul>
+                 <li> MatchesWeb_JS_WebServer.html</li>
+                 <li> MatchesRaw.py</li>
+             </ul>
+        </li>
+        <li>JavaScript with Raw C++.  This is in the Eclipse project /home/Family/Projects/WebServer files:
+             <ul>
+                 <li> src/MatchesWeb_JS_WebServer.html</li>
+                 <li> inc/WebServer.h, src/WebServer.cpp</li>
+                 <li> inc/MatchesServer.h, src/MatchesServer.cpp</li>
+                 <li> src/MatchesServerMain.cpp</li>
+             </ul>
+        </li>
+    </ul>
+    </p>
+
+    <h2>Matches Game using JavaScript Only</h2>
+    <p>
+The JavaScript only technology uses JavaScript to implement the game strategy
+algorithm.  This is straightforward JavaScript that reads the values of various
+HTML tags, computes the next move, and then updates the HTML tags appropriately.
+<p>
+The html elements are described below
+    <ul>
+      <li> The <i>script</i> has JavaScript code for the <i>play()</i> function
+           and the <i>clearDisplay()</i> function.  The <i>play()</i> button
+           is invoked when the user clicks the button with id tag "playButton".
+           The <i>clearDisplay</i> is invoked when the user clicks the button
+           with id tag "clearButton".
+      <li> The <i>textarea</i> tag with id "display" is where the system
+           prints messages regarding its play choice, or to indicate
+           errors.  It is set to automatically scroll as needed.
+      </li>
+      <li> The <i>input</i> tag with id "matches" is the text input field.  It 
+           specifies the number of matches remaining.
+      </li>
+      <li> The <i>select</i> tag with id "taken" is the drop-down list that 
+           indicates the user's choice for his move.
+      </li>
+      <li> The <i>button</i> tag with id "playButton" is the button the user
+           presses to submit his play choice.  When clicked it invokes the
+           <i>play()</i> function
+      </li>
+      <li> The <i>button</i> tag with id "clearButton" is the button the
+           user presses to clear the display area "display"
+      </li>
+    </ul>
+</p>
+<p>
+The <i>play()</i> button reads the value of the user play choice in the
+drop down selection list, the JavaScript variable "taken".  It then executes 
+the game logic to determine the value of the system move in the JavaScript
+variable "newTaken".  It then updates the "matches" <i>input</i> field, and the
+"display" <i>textarea</i>.
+</p>
+<p>
+The code is in MatchesWeb_JS_Only.html and can be examined in a text editor.
+    </p>
+
+    <h2>Matches Game using Web Servers</h2>
+    <p>
+The rest of the techniques use web servers. The html file is MatchesWeb_JS_WebServer.html.
+After the web server is started up, the web browser should be targeted at the appropriate
+URL specified in this documentation.  The web browser need not be on the same system as
+the Web Server.
+    </p>
+    <p>
+The html file uses JavaScript to send a JSON (JavaScript Object Notation) data structure
+message to the web browser.  This JSON message string has the form:
+    </p>
+    <p class="code">
+       {"matchesRemaining" : "25", "taken" : "2"}
+    </p>
+    <p>
+The message is sent to the web server using AJAX (Asynchronous JavaScript and XML)
+technnology for updating parts of a webpage without a full reload. It uses AJAX
+with the jQuery library which provides a user-friendly, cross-browser compatible
+wrappingaround AJAX. Details about using this technology can
+be found at <a href="https://api.jquery.com/jQuery.ajax/">The jQuery ajax() function</a>.
+    </p>
+
+    <h2>Matches Game using Apache server with PHP</h2>
+    <p>
+In this technology, we need 2 files, the JavaScript HTML file MatchesWeb_JS_WebServer.html,
+and the server PHP file MatchesWeb.php.  The web server must be accessible as an URL.  For
+the purpose of this document, we will assume the URL for the web server is http://192.168.1.64.
+Any IP address or Domain Name where your server is available can be substituted.
+    </p>
+    <p>
+The web browser should be targeted at URL http://192.168.1.64/MatchesWeb.php (or else at your
+own domain-name followed by "/MatchesWeb.php").
+    </p>
+    <p>
+If you have your own web server, then MatchesWeb.php needs to be installed at the Document Root
+directory for your server.  With Apache httpd server, this is /var/www/html on the server 
+machine.  For this, the Apache Web Server (or other web server) needs to be installed on some
+machine accessible from your web browser machine.
+    </p>
+    <h2>Firewall enablement for Experimental Web Servers</h2>
+    <p>
+When you use a web server from a commercial vendor, the server machine firewall is properly
+configured to accept requests on a port (usually port 80).  If you install the Apache server
+on your own machine, it too configures the firewall to accept requests appropriately.
+     <p>
+However, when you build your own experimental web servers, as we will be for the remaining
+technologies, it is necessary to set up the firewall appropriately.  As we will be configuring
+our experimental servers to use port 8080, it is necessary to enable the port for requests
+from other machines prior to starting up the server.  Finally, when the experiment is complete,
+it is necessary to disable the port to keep your server machine secure.  To this end you should
+use the following commands:
+     </p>
+    <p style="margin-left: 50px;">
+    <ol class="padded-list">
+    <li> On the server machine, as super-user, do this command before starting the experimental server:
+        <p class="code">
+             netstat -a | grep :8080
+        </p>
+    There should be no output.  The port 8080 should be unused.
+    </li>
+    <li> Then, do the following command to enable port 8080:
+        <p class="code">
+             firewall-cmd --add-port=8080/tcp
+        </p>
+    </li>
+    <li> Finally after the experiment, do the following command to disable port 8080:
+        <p class="code">
+             firewall-cmd --remove-port=8080/tcp
+        </p>
+    </li>
+    </ol>
+    </p>
+
+    <h2>Matches Game using Python Flask Web Server</h2>
+    <p>
+In this technology, you will also use the JavaScript HTML file MatchesWeb_JS_WebServer.html.
+You will need to install the Python Flask framework on your system.  This can be done by the
+command:
+        <p class="code">
+             pip3 install flask
+        </p>
+    </p>
+    <p>
+Once that is done, you will be able to execute the program MatchesFlask.py by the command
+        <p class="code">
+             python3 MatchesFlask.py
+        </p>
+    </p>
+The program will supply the URL to connect the web browser to.
+</body>
+</html>
+

@@ -1,0 +1,51 @@
+HTTP/1.1 200 OK
+<!DOCTYPE HTML//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+
+<script>
+var isOn = {A:false, B:false, C:false, D:false};
+
+function play(x) {
+    btn = document.getElementById(`btn${x}`);
+    if (isOn[x]) {
+	newStyle = "background-color: red";
+        newText = `Turn On ${x}`;
+        isOn[x] = false;
+    } else {
+	newStyle = "background-color: green";
+        newText = `Turn Off ${x}`;
+        isOn[x] = true;
+    }
+
+    btn.style = newStyle;
+    btn.innerHTML = newText;
+
+    display = document.getElementById("display");
+    display.innerHTML = `Toggled ${x}`;
+}
+
+</script>
+
+<html>
+<head>
+  <title>Custom Button Test</title>
+</head>
+<h2>Custom Button Test</h2>
+<body bgcolor="#cccccc" text="#000000">
+<p>
+<form name="CustomButtonTest" action="response" method="post">
+	<p>
+	<textarea id="display" 
+                  rows=2 cols=40 
+                  class="screen"></textarea>
+	<p>
+ 	<button id="btnA" type="button" style="background-color: red" onclick="play('A');">Turn On A</button>
+ 	<button id="btnB" type="button" style="background-color: red" onclick="play('B');">Turn On B</button>
+        <p>
+ 	<button id="btnC" type="button" style="background-color: red" onclick="play('C');">Turn On C</button>
+ 	<button id="btnD" type="button" style="background-color: red" onclick="play('D');">Turn On D</button>
+	<p>
+</form>
+</body>
+</html>
+
+

@@ -9,6 +9,7 @@
 #include <iostream>
 #include "inc/ChatServer.h"
 #include "inc/ChatClient.h"
+#include <stdexcept>
 using namespace std;
 /**************************************************
  * This is a simple Chat application.
@@ -54,21 +55,33 @@ using namespace std;
  **************************************************/
 
 int main(int argc, char** argv) {
-	if (argc == 1) {
-		return 0;
-	}
+	string errorMsg = "For server: Chat server \n "
+					  "For client: Chat <server-ip-addr>";
 
-	string arg1 = argv[1];
-	if (arg1 == "server") {
-		// arg1 is the special name "server", to startup the ChatServer
-		ChatServer chatServer;
-
-		chatServer.run();
-	} else {
-		// arg1 is the name of the client, to startup the ChatClient
-		ChatClient chatClient(arg1);
-
-		chatClient.runInputLoop();
+	switch (argc) {
+	  case 1:
+		throw std::logic_error(errorMsg);
+	  case 2:
+	  {
+		  string arg1 = argv[1];
+		  if (arg1 == "server") {
+			  ChatServer chatServer;
+			  chatServer.run();
+			  return 0;
+		  } else {
+ 			  throw std::logic_error(errorMsg);
+		  }
+	  }
+	  case 3:
+	  {
+		  string name = argv[2];
+		  string serverIpAddrStr = argv[1];
+		  ChatClient chatClient(serverIpAddrStr, name);
+		  chatClient.runInputLoop();
+		  return 0;
+	  }
+	  default:
+		throw std::logic_error(errorMsg);
 	}
 
 	return 0;
