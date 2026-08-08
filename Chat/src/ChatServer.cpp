@@ -5,15 +5,39 @@
  *      Author: Family
  */
 
+#include <cerrno>
+#include <string.h>
 #include <iostream>
 #include <exception>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <unistd.h>      // for gethostname()
+#include <netdb.h>       // for gethostbyname()
+#include <arpa/inet.h>   // for inet_ntoa()
 
 #include "Port.h"
 #include "MessageData.h"
 #include "inc/ChatServer.h"
 #include "ConnectionListener.h"
+
+static string getHostIpAddr()
+{
+    char hostName[256];
+    if (gethostname(hostName, sizeof(hostName)) == -1) {
+    	throw std::logic_error("gethostname() error!");
+    }
+
+    struct hostent *hostEntry = gethostbyname(hostName);
+    if (hostEntry == NULL) {
+    	throw std::logic_error("gethostbyname() error!");
+    }
+
+    char *ipAddress = inet_ntoa(*(struct in_addr*)hostEntry->h_addr_list[0]);
+
+    string retval = ipAddress;
+    return retval;
+}
+
 
 ChatServer::ChatServer()
 {
@@ -22,23 +46,48 @@ ChatServer::ChatServer()
 	// Create the socket.
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_socket < 0) {
-		throw std::logic_error("ChatServer could not create main socket!");
+        string errorMsg = "ChatServer could not create main socket! ";
+        errorMsg += strerror(errno);
+        throw std::logic_error(errorMsg);
 	}
 
-	if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-	                                                  &opt, sizeof(opt))) {
-		throw std::logic_error("Could not set main socket options!");
-	}
+    // Set SO_REUSEADDR
+    if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        // Capture errno immediately before any other function calls modify it
+        string errorMsg = "ChatServer could not set socket option SO_REUSEADDR! ";
+        errorMsg += strerror(errno);
+        throw std::logic_error(errorMsg);
+    }
+
+    // Set SO_REUSEPORT
+    if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+        // Capture errno immediately before any other function calls modify it
+        string errorMsg = "ChatServer could not set socket option SO_REUSEPORT! ";
+        errorMsg += strerror(errno);
+        throw std::logic_error(errorMsg);
+    }
+
+	string serverIpAddr = getHostIpAddr();
+    std::cout << "Chat client call: Chat "
+			  << serverIpAddr
+			  << " <username>"
+			  << std::endl;
 
     m_address.sin_family = AF_INET;
-    m_address.sin_addr.s_addr = INADDR_ANY;
+    // The following setting is a 32-bit integer for an IPV4 address.
+    // It could be INADDR_ANY, but we set it to the actual ip-address
+    // of the server which was reported as startup for clients to
+    // connect to.
+    m_address.sin_addr.s_addr = inet_addr(serverIpAddr.c_str());
     m_address.sin_port = htons(MAINSOCKET_PORT);
 
     // Forcefully attaching socket to the port 8080
     if (bind(m_socket, (struct sockaddr *)&m_address,
                                  sizeof(m_address))<0)
     {
-    	throw std::logic_error("Could not set bind main socket!");
+		string errorMsg = "ChatServer could not bind main socket! ";
+		errorMsg += strerror(errno);
+		throw std::logic_error(errorMsg);
     }
 
 	// Now setup the socket to timeout on blocking calls, such as accept,
@@ -47,7 +96,12 @@ ChatServer::ChatServer()
 	struct timeval tv;
 	tv.tv_sec = 2;
 	tv.tv_usec = 0;
-	setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+    if (setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
+        // Capture errno immediately before any other function calls modify it
+        string errorMsg = "ChatServer could not set socket option SO_RCVTIME0! ";
+        errorMsg += strerror(errno);
+        throw std::logic_error(errorMsg);
+    }
 
 	if (listen(m_socket, 5) < 0) {
 		throw std::logic_error("Could not listen at main socket!");

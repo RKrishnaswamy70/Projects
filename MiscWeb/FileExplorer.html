@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Explorer UI</title>
+
+<!-- 
+   This CSS block was generated with AI help.  I don't understand
+   the details.
+-->
+<style>
+    header {
+        font-family: Arial, sans-serif;
+        font-size: 2.1em;
+        text-align: center;
+        padding: 20px;
+        background-color: #f4f4f4;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .status-box {
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: opacity 0.3s ease;
+    }
+
+    /* Hide utility class */
+    .hidden {
+        display: none;
+        opacity: 0;
+    }
+
+    /* Status variants */
+    .status-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .status-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Close button styling */
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: inherit;
+        font-weight: bold;
+    }
+
+    .root-path {
+        font-size: 1.1em;
+        margin-bottom: 15px;
+        color: #333;
+        font-weight: bold;
+    }
+
+    /* --- FILE TREE ARCHITECTURE --- */
+
+    /* Root Container Setup */
+    .file-tree {
+        padding: 0;
+        margin: 0 0 0 10px;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Tree Indentation & Continuous Vertical Guide Line */
+    .file-tree .details-content {
+        position: relative;
+        padding-left: 20px;   /* Creates layout hierarchy indentation */
+        margin-left: 16px;   /* Snaps directly underneath parent icon center */
+        border-left: 1px solid #b8c2cc !important; /* Generates guide line */
+    }
+
+    /* Native tag boundary normalization */
+    .file-tree details {
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Standalone File Layout Rules */
+    .file-tree .file {
+        position: relative;
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        margin: 2px 0;
+        border-radius: 4px;
+        color: #333;
+    }
+
+    /* Folder Summary Layout Rules */
+    .file-tree summary {
+        position: relative;
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        margin: 2px 0;
+        border-radius: 4px;
+        color: #333;
+        outline: none;
+    }
+
+    /* Native details indicator resets */
+    .file-tree summary::-webkit-details-marker {
+        display: none !important;
+    }
+    .file-tree summary {
+        list-style: none !important;
+    }
+
+    /* Hover highlight transitions */
+    .file-tree summary:hover, 
+    .file-tree .file:hover {
+        cursor: pointer;
+        background-color: #e9ecef;
+    }
+
+    /* Media/Emoji sizing rules */
+    .file-tree .icon,
+    .file-tree .folder-icon {
+        margin-right: 8px;
+        width: 16px;
+        text-align: center;
+        display: inline-block;
+    }
+
+    /* --- SMART DYNAMIC FOLDER ICONS --- */
+
+    /* Default state: Collapsed or Empty Folder */
+    .file-tree .folder-icon::before {
+        content: "📁";
+    }
+
+    /* Enhanced State: Only shows open folder IF it is open AND contains child content */
+    .file-tree details[open]:has(.details-content) > summary .folder-icon::before {
+        content: "📂";
+    }
+
+    /* --- HORIZONTAL LINES (CONNECTING BRANCHES) --- */
+
+    /* Maps connecting stems straight to container boundaries */
+    .file-tree summary::before,
+    .file-tree .file::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: -20px;          /* Bridging left padding distance gap */
+        width: 20px;          /* Connects exactly back to parent border line */
+        border-top: 1px solid #b8c2cc;
+        transform: translateY(-50%);
+    }
+
+    /* --- HANGING LINE TRIMMING ERASERS --- */
+
+    /* Stops lingering lines below final directory listing */
+    .file-tree .details-content > details:last-child::after {
+        content: "";
+        position: absolute;
+        top: 17px;           /* Starts erasing immediately below line midpoint */
+        bottom: 0;
+        left: -21px;         /* Anchors over the exact parent border line space */
+        width: 2px;
+        background: #f8f9fa; /* Eraser colors must map to body background styling */
+    }
+
+    /* Stops lingering lines below final file listing */
+    .file-tree .details-content > .file:last-child::after {
+        content: "";
+        position: absolute;
+        top: 17px;           /* Starts erasing immediately below line midpoint */
+        bottom: 0;
+        left: -21px;         /* Anchors over the exact parent border line space */
+        width: 2px;
+        background: #f8f9fa; /* Eraser colors must map to body background styling */
+    }
+</style>
+
+</head>
+
+<!-- The following is to pick up jquery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script>
+    // The bottom of this html file has an initial display of html code
+    // of the type that is produced by this JavaScript.
+
+    // HTML that is produced for a directory.
+    function dirNameToHTML(dirName, itemPath) {
+        // Using backquotes we can put newlines in the string
+        result = `<details open="" path="${itemPath}">
+		      <summary>
+                          <!-- CSS will insert the 📁 or 📂 icon here -->
+		          <span class="folder-icon" 
+                                onclick="clickFolder(this);"
+                                oncontextmenu="uploadToDir(this);"></span>
+                          <span class="text"> ${dirName}</span>
+		      </summary>
+                  </details>\n`;
+        return result;
+    }
+
+
+    // HTML that is produced for a file.
+    function fileNameToHTML(fileName, itemPath) {
+        result = `<div class="file" path="${itemPath}">
+                      <span class="icon"
+                            onclick="clickFile(this);"
+                            oncontextmenu="downloadFile(this); return false;">📜</span>
+                      <span class="text"> ${fileName}</span>
+                  </div>\n`;
+        return result;
+    }
+
+
+    // Called from addRemoteContent().  This function converts a
+    // descriptor for a folder into HTML for the folder
+    //
+    // descr is an associative array having three fields:
+    //   path: a string that is the path of the directory
+    //   dirs: an array of strings that is the names of subdirs
+    //   files: an array of strings that is the names of files
+    //
+    // For a descr such as:
+    //   {err = "",
+    //    path = "a/b/c",
+    //    dirs = ["Subdir1", "Subdir2"],
+    //    files = ["thing1.css", "thing2.css"]}
+    // this function produces the following HTML:
+    //   <div class="details-content">
+    //      <details open="" path="a/b/c/Subdir1">
+    //         <summary>
+    //            <!-- CSS will insert the 📁 or 📂 icon here -->
+    //            <span class="folder-icon" 
+    //               onclick="clickFolder(this);"
+    //               oncontextmenu="uploadToDir(this);"></span>
+    //            <span class="text"> ${dirName}</span>
+    //         </summary>
+    //      </details>
+    //      <details open="" path="a/b/c/Subdir2">
+    //         <summary>
+    //            <!-- CSS will insert the 📁 or 📂 icon here -->
+    //            <span class="folder-icon" 
+    //               onclick="clickFolder(this);"
+    //               oncontextmenu="uploadToDir(this);"></span>
+    //            <span class="text"> ${dirName}</span>
+    //         </summary>
+    //      </details>
+    //      <div class="file" path="a/b/c/thing1.css">
+    //         <span class="icon" onclick="clickFile(this);">📜</span>
+    //         <span class="text"> thing1.css</span?
+    //      </div>
+    //      <div class="file" path="a/b/c/thing2.css">
+    //         <span class="icon" onclick="clickFile(this);">📜</span>
+    //         <span class="text"> thin21.css</span?
+    //      </div>
+    //   </div>
+    function descrToContentElt(descr) {
+        var htmlText = '';
+        var itemPath = '';
+        var path = descr['path'];
+        var dirs = descr['dirs'];
+        var files = descr['files'];
+
+        if (dirs === null) {
+            dirs = [];
+        }
+
+        if (files === null) {
+            files = [];
+        }
+
+        for (i = 0; i < dirs.length; i++) {
+            itemPath = `${path}/${dirs[i]}`;
+            htmlText = htmlText + dirNameToHTML(dirs[i], itemPath);
+        }
+            
+        for (i = 0; i < files.length; i++) {
+            itemPath = `${path}/${files[i]}`;
+            htmlText = htmlText + fileNameToHTML(files[i], itemPath);
+        }
+ 
+        // Now wrap it up in HTML for this directory.  This
+        // will be a <div> element, with class 'details-content'.
+        result = document.createElement('div');
+        result.className = 'details-content';
+        result.innerHTML = htmlText;
+
+        return result;
+    }
+
+
+    // Called from clickFolder().  This is the main function that
+    // makes the AJAX call to the remote server.  On a successful
+    // call it adds in the folder html contents.
+    function addRemoteContent(details) {
+        var serverURL = "$ServerURL";
+
+        // Should get the path from the path-attribute of folder
+        var folderPath = details.getAttribute("path");
+
+        var requestDescr = { cmd: "getContents", path: folderPath };
+
+        // Send the data to the server as a JSON string
+        var toServer = JSON.stringify(requestDescr);
+
+        // Send the data to the server using AJAX
+        // See documentation in https://api.jquery.com/jQuery.ajax/
+        $.ajax({
+           url: serverURL,   // "http://localhost:8080/",
+           type: "POST",
+           data: toServer,
+           // This is the request content type.  The request is in JSON.
+           // The available contentTypes are:
+           //    default   : "application/x-www-form-urlencoded; charset=UTF-8"
+           //    json      : "application/json; charset=utf-8"
+           //    plain text: "text/plain"
+           contentType: "application/json; charset=utf-8",
+           // This is the response data type.  The response is also in json.
+           // The available datatypes are: 
+           //    "text", "html", "xml", "json", "jsonp", "script"
+           // If json is specified, the response is parsed using jQuery.parseJSON 
+           // before being passed, as an object, to the success handler. 
+           datatype: "json",
+
+           // Important: This function CANNOT return the response-text
+           // expecting the caller to block till the text is available.
+           // The .ajax call is asynchronous!
+           //
+           // So it is important to actually update the HTML right here
+           // within this success-function, which is guaranteed to be
+           // called when the request is available!  Hence here is where
+           // we call folder.insertAdjacentHTML.
+           //
+           // Here is an example of responseDescr that would typically be 
+           // gotten from an AJAX call to the server:
+           //   responseDescr = { err: "",
+           //                     path: "/a/b/c", 
+           //                     dirs: ["SubDir1", "SubDir2"],
+           //                     files: ["one.pdf", "two.cpp"] };
+           success: function(responseText) {
+               var responseDescr = JSON.parse(responseText);
+               var err = responseDescr.err;
+
+               if (err === "") {
+                   var contentElt = descrToContentElt(responseDescr);
+                   details.appendChild(contentElt);
+
+                   // This is supposed to open the details pointer
+                   // in the html. Currently, the html does not
+                   // even show the details pointer.  So maybe
+                   // it is irrelevant.
+		   details.open = true;
+               } else {
+                   // Put out an error message box
+                   alert(err);
+               }
+           },
+
+           error: function(xhr, status, error) {
+               alert(xhr.response.txt);
+           }
+        });
+    }
+
+
+    // Called from clickFolder().  Removes present
+    // html contents of the folder before updating
+    // from remote contents.
+    function removeContent(details) {
+        var contentElt = details.lastElementChild;
+
+        if (contentElt.localName == "summary") {
+            // The element is already closed, since the
+            // only child is the <summary> element, and
+            // not the <div> element with the contents.
+            return;
+        }
+            
+        // The content of the folder in this HTML is the
+        // sibling of the folder.  So we just remove it.
+        contentElt.remove();
+
+        // Do we need to do this?  I don't know.
+        //    details.open = false;
+        // This should be done by details.removeAttribute("open")
+    }
+
+
+    // Called from clickFolder().  Returns true if the contents
+    // are filled up, that is if the last child is a <div> element.
+    function hasContent(details) {
+        var lastElt = details.lastElementChild;
+
+        if (lastElt.localName == "div") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    // When the folder is clicked, this will collapse it,
+    // that is remove its content if it is already expanded.
+    // On the other hand, if not yet expanded, it will
+    // add content to it.
+    function clickFolder(folderIcon) {
+        var summary = folderIcon.parentElement;
+        var details = summary.parentElement;
+
+        if (hasContent(details)) {
+           // Remove current contents
+           removeContent(details);
+        } else {
+           // Get new content 
+           addRemoteContent(details);
+        }
+    }
+
+
+    function setRoot() {
+        var rootPathInputElt = document.getElementById("rootPath");
+        var rootPath = rootPathInputElt.value;
+        var rootPathGroupElt = document.getElementById("rootPathGroup");
+        var fileTreeRoot = rootPathGroupElt.nextElementSibling;
+        var folderIcon;
+
+        // The first parameter to dirNameToHTML() is to be the directory
+        // name.  However, for the root directory we set it to the full
+        // root path name
+        fileTreeRoot.innerHTML = dirNameToHTML(rootPath, rootPath);
+
+        // Now get the file icon as below:
+        // fileTreeRoot.innerHTML is of the form
+        //    <details open="" path="${rootPath}">
+        //	  <summary>
+        //	      <span class="icon" 
+        //                 onclick="clickFolder(this);"
+        //                 oncontextmenu="uploadToDir(this);">📁</span> ${dirName}
+        //	  </summary>
+        //    </details>
+        // So the folder icon is:
+        //    fileTreeRoot.firstElementChild.firstElementChild.firstElementChild
+        folderIcon = fileTreeRoot.firstElementChild.firstElementChild.firstElementChild;
+
+        // Now click the file icon
+        clickFolder(folderIcon);
+    }
+
+
+    // Function to get a text file and launch it in a new window.
+    // Send a get-call with a URL like:
+    //   $ServerURL/textfile/a/b/c/foo.txt
+    function getTextFile(filePath) {
+        var serverURL = "$ServerURL";
+ 
+        // Should get the path from the path-attribute of div
+        var fileURL = `${serverURL}/textfile${filePath}`;
+
+        // Launch a new tab
+        window.open(fileURL, '_blank');
+    }
+
+
+    // Async function to get a Binary Large Object file (blob file).
+    // Send a get-call with a URL like:
+    //   $ServerURL/blobfile/a/b/c/foo.txt
+    async function getBlobFile(filePath) {
+        try {
+            var serverURL = "$ServerURL";
+
+            // 1. Send the GET request to the Python backend
+            const response = await fetch(`${serverURL}/blobfile${filePath}`);
+
+            if (!response.ok) {
+                alert(`Error: ${response.status}`);
+                return;
+            }
+
+            // 2. Convert the response into a Blob stream.
+            const blobStrm = await response.blob();
+
+            // 3. Create a unique local URL pointing to the Blob stream.
+            const blobURL = URL.createObjectURL(blobStrm);
+
+            // 4. Use blobURL to open the PDF directly in a browser tab/window.
+            const win = window.open(blobURL, '_blank');
+
+            // 5. Clean up memory after processing.  Give a timeout of 1000ms
+            // before cleaning up so that the download to the window is complete.
+            setTimeout(() => {
+                URL.revokeObjectURL(blobURL);
+            }, 1000);
+        } catch (error) {
+            alert("Failed to load the PDF file:" + error.message);
+        }
+    }
+
+
+    // This function determines if the file is a text file or a binary
+    // large object file (blob file) based on its extension.  A blob
+    // file is a file whose format is directly understood by the browser.
+    // These include .pdf files and image files such as .png, .jpeg and
+    // .gif files.
+    //
+    // All other files are treated as text files.  If a text file is
+    // sent to the browser, it will display it with a default formatting
+    // which will ignore the white spaces in the text file.  This is
+    // usually not what is required of text files.  They should be
+    // displayed verbatim.  Hence, they will be wrapped in html so that
+    // their whitespace formatting will be seen in the browser.  To this
+    // end, the server will change all '<' and '>' characters into
+    // '&lt;' and '&gt;'.
+    //
+    // An interesting case is .html file.  Clearly this textual file is
+    // a format the browser understands!  Hence, it should be treated as
+    // a blob file, i.e. it should not be wrapped in another HTML!
+    // Note: as an HTML file is a blob-file, "View Page Source" fails!
+    function isTextFile(filePath) {
+        const blobFileSuffixes = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.html'];
+        for (var i = 0; i < blobFileSuffixes.length; i++) {
+            if (filePath.endsWith(blobFileSuffixes[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
+
+    // When a file is clicked, it will get the file in a new window.
+    function clickFile(fileIcon) {
+        var div = fileIcon.parentElement;
+ 
+        // Should get the path from the path-attribute of div
+        var filePath = div.getAttribute("path");
+
+        if (isTextFile(filePath)) {
+            getTextFile(filePath);
+        } else {
+            getBlobFile(filePath);
+        }
+    }
+
+
+  // This is called by the hidden file input element, which invokes the
+  // browser file-chooser dialog.  This function is called when a file
+  // chosen.
+  async function uploadFile(fileInputElt) {
+      if (fileInputElt.files.length == 0) {
+        alert("No file selected");
+        return;
+      }
+
+      const formData = new FormData();
+
+      // The FormData keys expected by backend are:
+      //   'UploadFile' - basename of the uploaded file.
+      //   'TargetDir'  - target directory to upload the file to.
+      formData.set('UploadFile', fileInputElt.files[0]);
+      formData.set('TargetDir', fileInputElt.getAttribute('TargetDir'));
+
+      // Send AJAX request via fetch API
+      try {
+          var serverURL = "$ServerURL";
+
+          const response = await fetch(`${serverURL}/upload`, {
+                               method: 'POST',
+                               body: formData
+                           });
+
+          // Wait for the response
+          const result = await response.json();
+         
+          if (response.ok) {
+              setStatus('success', result.message);
+          } else {
+              setStatus('error', result.error);
+          }
+      } catch (error) {
+          setStatus('error', error.message);
+      }
+  }
+
+  
+  function uploadToDir(folderIcon) {
+      var summary = folderIcon.parentElement;
+      var details = summary.parentElement;
+      var dirPath = details.getAttribute('path');
+
+      // Set the attribute 'TargetDir' of the hidden 'fileInput' element
+      const fileInputElt = document.getElementById('fileInput');
+      fileInputElt.setAttribute('TargetDir', dirPath);
+
+      // Now click the fileInputElt element.  This calls uploadFile().
+      fileInputElt.click();
+  }
+
+
+  function downloadFile(fileIcon) {
+      var serverURL = "$ServerURL";
+
+      var div = fileIcon.parentElement;
+ 
+      // Should get the path from the path-attribute of div
+      var filePath = div.getAttribute("path");
+
+      // Force the download.  Create a hidden element 'anchor',
+      // sets the 'download' attribute of the anchor.  Then it
+      // attaches the anchor as a child of this document, and
+      // clicks it.  This downloads the file.
+      //
+      // Finally it removes this anchor as it is no longer needed.
+      try {
+          const anchor = document.createElement('a');
+          
+          anchor.href = `${serverURL}/download${filePath}`;
+          anchor.download = "";
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+
+          setStatus('success', `Downloaded: ${filePath}`);
+      } catch (error) {
+          setStatus('error', error.message);
+      }
+  }
+
+
+  function setStatus(type, message) {
+      const statusBox = document.getElementById('statusBox');
+      const statusText = document.getElementById('statusText');
+
+      // Reset existing status classes (why is this needed?)
+      statusBox.className = 'status-box';
+
+      // Inject text and apply the correct style modifier
+      statusText.innerText = message;
+      statusBox.classList.add(`status-${type}`);
+
+      // Reveal the element
+      statusBox.classList.remove('hidden');
+  
+      // Auto-hide the message after 5 seconds
+      setTimeout(() => {
+        hideStatus();
+        }, 5000);
+  }
+
+
+  function hideStatus() {
+      const statusBox = document.getElementById('statusBox');
+      statusBox.classList.add('hidden');
+  }
+
+
+  // Startup code
+  function startup() {
+      var serverHostName = "$ServerHostName";
+      headerElt = document.querySelector('header');
+      headerElt.textContent = serverHostName;
+  }
+</script>
+
+
+<body onload=startup()>
+    <!-- Hidden file input -->
+    <input type="file" id="fileInput" style="display: none;" onchange="uploadFile(this);"/>
+
+    <!-- Status Box Container -->
+    <div id="statusBox" class="status-box hidden" role="status" aria-live="polite">
+      <span id="statusText"></span>
+      <button class="close-btn" onclick="hideStatus()">&times;</button>
+    </div>
+
+    <header>
+    </header>
+
+    <div class="root-path" id="rootPathGroup">Root Path:
+        <input class="root-path" type="text" id="rootPath"
+         onkeydown="if(event.key==='Enter') setRoot();" value="/home/Dummy">
+    </div>
+
+    <!--
+    -  This initial file-tree display is an example of the type of the
+    -  file tree dynamically produced by the JavaScript code above.
+    -->
+    <div class="file-tree">
+    
+        <!-- 1. NESTED & EXPANDED FOLDER (Shows Open Folder 📂) -->
+        <details open>
+            <summary>
+                <span class="folder-icon"></span>
+                <span class="text">/home/Dummy</span>
+            </summary>
+        
+            <!-- This container handles the indentation and vertical line -->
+            <div class="details-content">
+            
+                <!-- A nested open sub-folder -->
+                <details open>
+                    <summary>
+                        <span class="folder-icon"></span>
+                        <span class="text">src</span>
+                    </summary>
+                    <div class="details-content">
+                        <div class="file">
+                            <span class="icon">📄</span>
+                            <span class="text">index.js</span>
+                        </div>
+                        <div class="file">
+                            <span class="icon">📄</span>
+                            <span class="text">styles.css</span>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- 2. COLLAPSED FOLDER WITH CONTENT (Shows Closed Folder 📁) -->
+                <details>
+                    <summary>
+                        <span class="folder-icon"></span>
+                        <span class="text">images</span>
+                    </summary>
+                    <div class="details-content">
+                        <div class="file">
+                            <span class="icon">🖼️</span>
+                            <span class="text">logo.png</span>
+                        </div>
+                        <div class="file">
+                            <span class="icon">🖼️</span>
+                            <span class="text">banner.jpg</span>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- 3. EMPTY FOLDER (Safely displays Closed Folder 📁 due to missing .details-content) -->
+                <details open>
+                    <summary>
+                        <span class="folder-icon"></span>
+                        <span class="text">empty-logs-directory</span>
+                    </summary>
+                    <!-- Notice that no div class="details-content" is rendered here by the server -->
+                </details>
+
+                <!-- Standard standalone loose files -->
+                <div class="file">
+                    <span class="icon">⚙️</span>
+                    <span class="text">package.json</span>
+                </div>
+            
+                <div class="file">
+                    <span class="icon">📝</span>
+                    <span class="text">README.md</span>
+                </div>
+            
+            </div>
+        </details>
+    
+    </div>
+
+</body>
+</html>
+
+

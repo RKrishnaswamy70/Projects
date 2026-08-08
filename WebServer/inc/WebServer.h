@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <map>
 #include <list>
 #include <string>
 #include <netinet/in.h>
@@ -27,18 +28,39 @@ public:
 	// To run the web server.
 	void run();
 
-	// This is the function that should perform the service,
-	// interpreting a path from a client, and filling in the
-	// string containing the path of the html file to display.  It should
-	// return false if the path is unrecognized.
-	//
-	// There is a default interpretation, which simply copies
-	// the responseText into the htmlText.  Subclasses can override
-	// this function.
+protected:
+	// To shutdown the server.
+	void shutdown();
+
+	// The ParamsMap is a string to string mapping names of html
+	// elements to their values.
+	class ParamsMap : public map<string, string>
+	{
+	public:
+		// Default constructor
+		ParamsMap() {}
+
+		// Argument is a json string
+		ParamsMap(const string& jsonStr);
+
+		// Returns a json string
+		string toJSONString() const;
+	};
+
+	// To get the initial HTML file path.  This should be overridden by
+	// the subclass
 	virtual
-	bool process(const string& responseText, string& htmlText);
+	string getInitialHTMLFilePath() const;
+
+	// To process requestParams and compute the responseParams.  It is to
+	// be overridden in the server subclass.
+	virtual
+	void process(const ParamsMap& requestParams, ParamsMap& responseParams);
 
 private:
+	// The server url with port, e.g. http://192.168.1.64:8080/DontCare
+	string m_serverURL;
+
 	// This is the main socket that is used to listen for
 	// connection.
 	int m_socket;
@@ -51,4 +73,11 @@ private:
 
 	// To handle a request from a socket
 	void handleRequest(int connectionSocket);
+
+	// Process a GET request
+	string doGet();
+
+	// Process a POST request
+	string doPost(const string& requestStr);
+
 };

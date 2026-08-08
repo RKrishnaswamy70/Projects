@@ -129,13 +129,13 @@ public class MatchesGui extends JDialog {
 				if (matches.isEditable()) {
 					// Initial setup
 					matches.setEditable(false);
-					matchesImpl = new MatchesImpl();
 					matchesImpl.setNumMatches(Integer.parseInt(matches.getText()));
 				}
 				
 				int matchesLeftAfterUserPlay = matchesImpl.getNumMatches();
 				if (matchesLeftAfterUserPlay == 0) {
 					txtrMessage.setText("User wins!");
+					matches.setEditable(true);
 					return;
 				}
 				
@@ -155,11 +155,14 @@ public class MatchesGui extends JDialog {
 	                        "Robot takes " + Integer.toString(robotPlay) +  "\n" +
 	                        Integer.toString(matchesLeftAfterRobotPlay) + 
 	                        " left\nRobot wins!");
+					matches.setEditable(true);
 				}
 			}
 		});
 		
 		btnPlayCompleted.setBounds(65, 180, 142, 25);
 		getContentPane().add(btnPlayCompleted);
+
+		matchesImpl = new MatchesImpl();
 	}
 }

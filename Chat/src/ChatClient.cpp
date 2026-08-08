@@ -1,4 +1,6 @@
 #include "inc/ChatClient.h"
+
+#include <cerrno>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -7,6 +9,7 @@
 #include <iostream>
 #include <string.h> // For strerror()
 #include <thread>
+#include <arpa/inet.h> // For inet_addr()
 
 #include "Port.h"
 #include "MessageData.h"
@@ -14,7 +17,7 @@
 using namespace std;
 
 
-ChatClient::ChatClient(const string& name)
+ChatClient::ChatClient(const string& serverIpAddrStr, const string& name)
 : m_name(name), m_socket(0),
 
   // m_shutdown is true, indicating the socket is not yet
@@ -36,18 +39,25 @@ ChatClient::ChatClient(const string& name)
 
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_socket < 0) {
-		throw std::logic_error("ChatClient could not create main socket!");
+        // Capture errno immediately before any other function calls modify it
+        string errorMsg = "ChatClient could not create main socket! ";
+        errorMsg += strerror(errno);
+		throw std::logic_error(errorMsg);
 	}
 
     memset(&serverAddr, 0, sizeof(serverAddr));
 
     serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = inet_addr(serverIpAddrStr.c_str());
     serverAddr.sin_port = htons(MAINSOCKET_PORT);
 
     ok = connect(m_socket, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
     if (ok < 0)
     {
-		throw std::logic_error("ChatClient could not connect to main socket!");
+        // Capture errno immediately before any other function calls modify it
+        string errorMsg = "ChatClient could not connect to main socket! ";
+        errorMsg += strerror(errno);
+		throw std::logic_error(errorMsg);
     }
 
 	// Now setup the socket to timeout on blocking calls, such as accept,
@@ -56,14 +66,20 @@ ChatClient::ChatClient(const string& name)
 	struct timeval tv;
 	tv.tv_sec = 2;
 	tv.tv_usec = 0;
-	setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+    // Set SO_RCVTIMEO
+    if (setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
+        // Capture errno immediately before any other function calls modify it
+        string errorMsg = "ChatClient could not set socket option SO_RCVTIMEO! ";
+        errorMsg += strerror(errno);
+        throw std::logic_error(errorMsg);
+    }
 
 	// First send the name to the ChatServer
 	ok = send(m_socket, name.c_str(), name.length() + 1, 0);
 	if (ok < 0) {
-		string msg = "ChatClient error sending name: ";
-		msg += strerror(errno);
-		throw std::logic_error(msg);
+		string errorMsg = "ChatClient error sending to name: ";
+		errorMsg += strerror(errno);
+		throw std::logic_error(errorMsg);
 	}
 
 	// Now can start the receiver thread
