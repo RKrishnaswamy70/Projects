@@ -1,0 +1,138 @@
+<!DOCTYPE HTML//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+
+<!-- The following is to pick up jquery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script>
+
+function doPlayCallback(responseText) {
+    // The responseText is a JSON string like
+    //   { "screen" : "LED-A has been turned on." }
+    var response = JSON.parse(responseText);
+    var screenMsg = response.screen;
+
+    // Now dump the screenMsg onto the screen.
+    document.RPiController.display.value = screenMsg;
+
+    // The screenMsg is of one of the forms:
+    //   LED-A has been turned on
+    //   LED-B has been turned off
+    // We need to pick up A/B and on/off:
+    const msgRegExp = /LED-(.) has been turned (on|off)\./;
+    var msgGroups = screenMsg.match(msgRegExp);
+    var ledStr = msgGroups[1];
+    var stateStr = msgGroups[2];
+
+    // alert(`ledStr=${ledStr}`);
+    // alert(`stateStr=${stateStr}`);
+    if (stateStr == "on") {
+        newStyle = "background-color: green";
+        newText = `Turn Off ${ledStr}`;
+    } else {
+        newStyle = "background-color: red";
+        newText = `Turn On ${ledStr}`;
+    }
+
+    // This gets the element with id btnA, btnB, btnC or btnD
+    var btn = document.getElementById(`btn${ledStr}`);
+    btn.style = newStyle;
+    btn.innerHTML = newText;
+}
+
+
+function play(x) {
+    var serverURL = "$ServerURL";
+
+    if (x == "") {
+        // Special case to clear the display
+        document.RPiController.display.value = "";
+        return;
+    }
+
+    var ledJsonStr;
+    var shutdownJsonStr;
+
+    var jsonData = { led: "", shutdown: false };
+
+    if ((x == "A") || 
+        (x == "B") || 
+        (x == "C") || 
+        (x == "D")) {
+        jsonData.led = x;
+    } else {
+        jsonData.shutdown = true;
+    }
+
+    // Send the data to the server as a JSON string
+    var toServer = JSON.stringify(jsonData);
+
+    // Send the data to the server using AJAX
+    // See documentation in https://api.jquery.com/jQuery.ajax/
+    $.ajax({
+        url: serverURL,
+        type: "POST",
+        data: toServer,
+        // This is the request content type.  The request is in plain text.
+        // The available contentTypes are:
+        //    default   : "application/x-www-form-urlencoded; charset=UTF-8"
+        //    json      : "application/json; charset=utf-8"
+        //    plain text: "text/plain"
+        contentType: "application/json; charset=utf-8",
+        // This is the response data type.  The response is also in json.
+        // The available datatypes are: 
+        //    "text", "html", "xml", "json", "jsonp", "script"
+        // If json is specified, the response is parsed using jQuery.parseJSON 
+        // before being passed, as an object, to the success handler. 
+        datatype: "json",
+
+        success: function(responseText) {
+            doPlayCallback(responseText);
+        },
+
+        error: function(xhr, status, error) {
+            alert(xhr.response.txt);
+        }
+    })
+}
+
+</script>
+
+<html>
+  <style>
+    button {
+       background: orange; /* default */
+       color: blue;        /* for text */
+       height:50px;
+       width:130px;
+       font-family: Arial, sans-serif;
+       font-size:16px;
+       font-weight:bold;
+       border: 5px solid blue; /* solid is needed */
+    }
+  </style>
+  <head>
+    <title>RPi Controller</title>
+  </head>
+  <h2>Raspberry Pi Controller</h2>
+  <body bgcolor="#cccccc" text="#000000">
+    <p>
+    <form name="RPiController" action="response" method="post">
+      <p>
+      <textarea id="display" 
+                rows=2 cols=40 
+                class="screen"></textarea>
+      <p>
+       <button Id="btnA" type="button" style="background-color: red" onclick="play('A');">Turn On A</button>
+       <button Id="btnB" type="button" style="background-color: red" onclick="play('B');">Turn On B</button>
+       <p>
+       <button Id="btnC" type="button" style="background-color: red" onclick="play('C');">Turn On C</button>
+       <button Id="btnD" type="button" style="background-color: red" onclick="play('D');">Turn On D</button>
+       <p>
+       <button type="button" onclick="play('');">Clear</button>
+       <button type="button" onclick="play('Shutdown');">Shutdown</button>
+      <p>
+    </form>
+  </body>
+</html>
+
+
