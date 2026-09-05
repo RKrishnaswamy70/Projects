@@ -8,8 +8,10 @@ Architecture
 ============
 
 There will be two processes:
-    - A Server Process.  This is Python process running the program 
-      RPiControllerServer.py.  This will run on your Raspberry Pi
+    - A Server Process.  Run one of the two following programs on the 
+      Raspberry Pi:
+         RPiControllerServer.py, a simple python web server
+         RPiControllerBottle.py, a bottle-based python web server
     - A Client Process.  This is your web browser.  You should run
       this on your laptop/desktop.
 	
@@ -20,8 +22,10 @@ How to run it
        on the same network as your laptop/desktop.
     1. Now open a terminal window and cd to the RPiController directory.
     2. Now startup the Server Process from the terminal window.
-       Enter the command:
+       Enter this command to run the simple python web server:
           python3 RPiControllerServer.py
+       Enter this command to run the bottle based python web server:
+          python3 RPiControllerBottle.py
        The process will startup and print a line specifying a URL.
        This is the URL that your browser on your laptop/desktop will
        connect to.
